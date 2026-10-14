@@ -1,0 +1,14 @@
+{
+  "client": {
+    "id": "fitplate-panel",
+    "entry": "./client/index.js",
+    "styles": ["./client/index.css"],
+    "slots": ["workbench.panel"],
+    "services": ["fitplate.run", "fitplate.scene", "fitplate.artifact", "fitplate.intake"],
+    "projections": [],
+    "publicConfig": {
+      "label": "FitPlate · 装得上",
+      "note": "client output is produced by the frontend batch (plugin/client -> plugin/extensions/main/client); the panel reads run/scene/artifact through the allow-listed services"
+    }
+  }
+}

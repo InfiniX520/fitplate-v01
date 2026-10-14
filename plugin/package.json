@@ -1,0 +1,43 @@
+{
+  "name": "@fitplate/plugin",
+  "version": "0.1.2",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": "./src/runtime.mjs",
+  "agnes": {
+    "plugins": [
+      {
+        "export": "runtime",
+        "id": "ext:fitplate/plugin",
+        "runtime": "in-process",
+        "inject": [
+          "extension"
+        ],
+        "services": [
+          "fitplate.run",
+          "fitplate.scene",
+          "fitplate.artifact",
+          "fitplate.intake"
+        ],
+        "config": {
+          "geometryRoot": "/home/Heliora/work/fitplate/geometry",
+          "pythonPath": "/home/Heliora/work/fitplate/.venv/bin/python",
+          "runsDir": "runs",
+          "tasksDir": "input/tasks",
+          "budget": {
+            "commandTimeoutMs": 30000,
+            "taskTimeoutMs": 180000,
+            "maxCandidates": 4
+          }
+        }
+      }
+    ],
+    "clientDescriptors": [
+      {
+        "rowId": "ext:fitplate/plugin",
+        "path": "./extensions/main/agnes.client.json"
+      }
+    ]
+  }
+}

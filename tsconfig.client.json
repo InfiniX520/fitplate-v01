@@ -1,0 +1,21 @@
+{
+  "//": "Type check for the browser panel sources. The host modules (@agnes/*) are not installed here — they are provided by the AGH import map at runtime — so this config checks everything else strictly.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
+    "jsx": "react-jsx",
+    "skipLibCheck": true,
+    "types": [],
+    "paths": {
+      "@agnes/web-client": ["./plugin/client/types/host.d.ts"]
+    }
+  },
+  "include": ["plugin/client/**/*.ts", "plugin/client/**/*.tsx"]
+}

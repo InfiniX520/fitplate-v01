@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fitplate.invalid/schemas/constraint-draft.schema.json",
+  "title": "FitPlate ConstraintDraft",
+  "description": "The deterministic intake compiler's output for one request revision: bounded field proposals with their sources, missing fields, conflicts and unsupported features. Every proposal is either taken from the form, from the device card, or from the documented text-pattern subset - the compiler never invents numbers, never reads model prose as fact, and never treats the existence of a reference as semantic correctness. The draft hash covers the whole document except draft_hash and created_at, so a confirmation binds to exactly these bytes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "draft_id",
+    "request_id",
+    "request_revision",
+    "request_sha256",
+    "device_card_id",
+    "device_card_sha256",
+    "outcome",
+    "field_proposals",
+    "missing_fields",
+    "conflicts",
+    "unsupported_features",
+    "program",
+    "feasibility",
+    "created_at",
+    "draft_hash"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "draft_id": { "type": "string", "pattern": "^draft-[a-z0-9][a-z0-9-]{1,40}-r[0-9]{1,5}$" },
+    "request_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,40}$" },
+    "request_revision": { "type": "integer", "minimum": 1 },
+    "request_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "device_card_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,62}$" },
+    "device_card_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "outcome": {
+      "enum": ["READY_TO_CONFIRM", "NEEDS_INPUT", "CONFLICTING_INPUT", "UNSUPPORTED_REQUEST"],
+      "description": "Priority: UNSUPPORTED_REQUEST > CONFLICTING_INPUT > NEEDS_INPUT > READY_TO_CONFIRM. READY_TO_CONFIRM means the inputs are complete and consistent - never that the design is feasible."
+    },
+    "field_proposals": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field_path", "disposition", "source"],
+        "properties": {
+          "field_path": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "disposition": { "enum": ["keep", "proposed", "locked", "rejected"] },
+          "value_mm": { "type": ["number", "null"] },
+          "unit_in": { "enum": ["mm", "cm", "m", "um", "in", null] },
+          "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "ref"],
+            "properties": {
+              "kind": { "enum": ["form", "text", "device_card", "program"] },
+              "ref": { "type": "string", "minLength": 1, "maxLength": 200 }
+            }
+          },
+          "reason": { "type": ["string", "null"], "maxLength": 200 }
+        }
+      }
+    },
+    "missing_fields": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "question"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "question": { "type": "string", "minLength": 1, "maxLength": 200 }
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "form", "text"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "form": { "$ref": "#/$defs/source_value" },
+          "text": { "$ref": "#/$defs/source_value" }
+        }
+      }
+    },
+    "unsupported_features": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["feature", "ref"],
+        "properties": {
+          "feature": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "ref": { "type": "string", "minLength": 1, "maxLength": 200 }
+        }
+      }
+    },
+    "program": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "version": { "type": "string", "minLength": 1, "maxLength": 32 }
+      }
+    },
+    "text_interpretations": {
+      "type": "array",
+      "maxItems": 4,
+      "description": "Optional and additive: only present when the caller handed verified text proposals to compile_draft. Each entry is a program fact re-derived from the real request text (the model supplied only the quote and an assertion); the whole document is covered by draft_hash. A draft with no verified proposal omits this key entirely, so an already-supported request keeps its old bytes and hash.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field_path", "kind", "quote", "value_mm", "unit_in", "source_ref"],
+        "properties": {
+          "field_path": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "kind": { "enum": ["upper_bound"] },
+          "quote": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["start", "end", "literal"],
+            "properties": {
+              "start": { "type": "integer", "minimum": 0 },
+              "end": { "type": "integer", "minimum": 1 },
+              "literal": { "type": "string", "minLength": 1, "maxLength": 8192 }
+            }
+          },
+          "value_mm": { "type": "number", "exclusiveMinimum": 0 },
+          "unit_in": { "enum": ["mm", "cm", "m", "um", "in"] },
+          "source_ref": { "type": "string", "minLength": 1, "maxLength": 200 }
+        }
+      }
+    },
+    "feasibility": {
+      "const": "not_evaluated_by_intake",
+      "description": "Feasibility (INFEASIBLE proofs) belongs to the real preflight/load path; this document never claims a solvability verdict."
+    },
+    "created_at": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "draft_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  },
+  "$defs": {
+    "source_value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "ref"],
+      "properties": {
+        "value": { "type": ["string", "number"] },
+        "ref": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    }
+  }
+}

@@ -1,0 +1,1334 @@
+/*
+ * FitPlate workbench panel styles.
+ *
+ * Colours come from the host's semantic tokens (`--agnes-*`, defined by
+ * packages/web/public/style.css and packages/web-ui tokens) with light-theme
+ * fallbacks, so the panel follows the workbench appearance instead of hard
+ * coding a second theme. Only the geometry colours (plate grey, device blue,
+ * connector orange, failure red) are fixed, because they are the legend the
+ * 3D view and the check list share.
+ */
+
+.fitplate-panel {
+  --fp-bg: var(--agnes-bg-page, #f6f7f9);
+  --fp-card: var(--agnes-bg-card, #ffffff);
+  --fp-text: var(--agnes-text-primary, #1f2329);
+  --fp-text-2: var(--agnes-text-secondary, #5c6470);
+  --fp-text-3: var(--agnes-text-tertiary, #8a929d);
+  --fp-line: var(--agnes-line-primary, #d9dde3);
+  --fp-accent: var(--agnes-brand-primary, #2f6fd0);
+  --fp-ok: var(--agnes-status-success-text, #1f7a45);
+  --fp-ok-bg: var(--agnes-status-success-bg, #e6f5ec);
+  --fp-warn: var(--agnes-status-warning-text, #9a6100);
+  --fp-warn-bg: var(--agnes-status-warning-bg, #fdf3e0);
+  --fp-danger: var(--agnes-status-danger-text, #c02a20);
+  --fp-danger-bg: var(--agnes-status-danger-bg, #fdeceb);
+  --fp-swatch-plate: #9aa2ab;
+  --fp-swatch-device: #2f7fd0;
+  --fp-swatch-connector: #e0891f;
+  --fp-swatch-fail: #d8342a;
+
+  color: var(--fp-text);
+  background: var(--fp-bg);
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /*
+   * Height discipline (025): the AGH web shell mounts this panel as the LAST
+   * flex child of `main` (topbar → workbench-split → #approval →
+   * #composer-mount → this panel). Claiming height:100% made the panel a
+   * full-viewport flex item; flexbox then crushed the approval card and the
+   * workspace tabs overflowed over its buttons, so the system driver's
+   * Playwright click was intercepted — the native pilot3 failure. The panel
+   * now holds a bounded height that leaves every host region its natural
+   * size, shrinks with min-height 0 when space is short, and yields further
+   * while a host approval card is visible (scoped rule below). All regions
+   * scroll inside the panel, never the page.
+   */
+  height: min(44vh, 600px);
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Keep conversation readable by default; users can explicitly focus the model.
+   Secondary facts fold below the 3D/result row instead of taking another column. */
+.fitplate-panel[data-layout='balanced'] {
+  height: min(54vh, 620px);
+}
+
+.fitplate-panel[data-layout='focused'] {
+  height: min(74vh, 840px);
+}
+
+/* The header wraps to two lines at 1366 (title + phase + refresh + toggle +
+   updated). In the run stage keep it to one compact line. */
+.fitplate-panel[data-run-stage='true'] .fp-header {
+  padding: 5px 10px;
+  gap: 6px;
+}
+
+.fitplate-panel[data-run-stage='true'] .fp-header .fp-toggle span,
+.fitplate-panel[data-run-stage='true'] .fp-header .fp-toggle {
+  font-size: 12px;
+}
+
+/*
+ * Guarantee the 3D row a real canvas height in the run stage. The canvas is
+ * border-box: a body of 160px shows only 158px of content (2×1px border). So the
+ * row is given at least 300px and the body at least 164px (inner ≥162px), and
+ * the toolbar/legend/notes are made compact and shrinkable so the chrome cannot
+ * starve the body below its minimum (the earlier defect left exactly 158px).
+ */
+.fitplate-panel[data-run-stage='true'] .fp-grid {
+  grid-template-rows: minmax(270px, 1fr) auto;
+}
+
+/* Inside the run stage the 3D body is the primary surface: allow it to use the
+   row fully rather than being clipped by an outer scroll. */
+.fitplate-panel[data-run-stage='true'] .fp-region-view {
+  overflow: hidden;
+}
+
+.fitplate-panel[data-run-stage='true'] .fp-view-body {
+  /* border-box 168 → ≥166px of visible canvas content (acceptance floor is 160,
+     with margin for sub-pixel/border rounding). The canvas host is inset:0, so
+     the canvas equals the body's *content* box = border-box − 2×1px border. */
+  min-height: 168px;
+}
+
+/* Compact the run-stage 3D toolbar so it wraps to fewer rows at 1366 width. */
+.fitplate-panel[data-run-stage='true'] .fp-view-toolbar {
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.fitplate-panel[data-run-stage='true'] .fp-view-toolbar button {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.fitplate-panel[data-run-stage='true'] .fp-view-toolbar .fp-toggle {
+  font-size: 12px;
+}
+
+/* The legend and the notes are supplementary: let them shrink and scroll so the
+   body keeps its guaranteed minimum instead of being squeezed. */
+.fitplate-panel[data-run-stage='true'] .fp-legend {
+  margin-top: 4px;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+.fitplate-panel[data-run-stage='true'] .fp-view-notes {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 4.5em;
+  overflow: auto;
+  margin-top: 4px;
+}
+
+/* Our own slot mount (boot.ts appends it to main as the last flex child):
+   let it shrink with the panel instead of holding a content-sized minimum. Scoped to mounts
+   that actually contain our panel (:has), so another extension's workbench.panel mount keeps
+   its own layout untouched. */
+main#main-content > div[data-agnes-slot-mount='workbench.panel']:has(.fitplate-panel) {
+  min-height: 0;
+}
+
+/* While the host renders an approval card, our panel yields more of the shared
+   column to the approval card, the conversation and the composer. Public host
+   attributes (#approval, [hidden]) only, and the styled element is strictly
+   our own panel inside our own slot mount. */
+main#main-content:has(#approval:not([hidden])) div[data-agnes-slot-mount='workbench.panel'] .fitplate-panel {
+  height: min(22vh, 300px);
+}
+
+.fitplate-panel *,
+.fitplate-panel *::before,
+.fitplate-panel *::after {
+  box-sizing: border-box;
+}
+
+.fitplate-panel h2 {
+  font-size: 14px;
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.fitplate-panel h3 {
+  font-size: 13px;
+  margin: 8px 0 4px;
+}
+
+.fitplate-panel button {
+  font: inherit;
+  color: var(--fp-text);
+  background: var(--fp-card);
+  border: 1px solid var(--fp-line);
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.fitplate-panel button:hover:not(:disabled) {
+  border-color: var(--fp-accent);
+  color: var(--fp-accent);
+}
+
+.fitplate-panel button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.fp-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--fp-card);
+  border: 1px solid var(--fp-line);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.fp-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.fp-title strong {
+  font-size: 15px;
+}
+
+.fp-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fp-phase {
+  color: var(--fp-text-2);
+}
+
+.fp-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--fp-text-2);
+  white-space: nowrap;
+}
+
+.fp-muted {
+  color: var(--fp-text-3);
+}
+
+.fp-warn {
+  color: var(--fp-warn);
+}
+
+.fp-ok {
+  color: var(--fp-ok);
+}
+
+.fp-detail {
+  color: var(--fp-text-3);
+}
+
+.fp-alert {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+
+.fp-alert-error {
+  background: var(--fp-danger-bg);
+  border-color: var(--fp-danger);
+  color: var(--fp-danger);
+}
+
+.fp-alert-warn {
+  background: var(--fp-warn-bg);
+  border-color: var(--fp-warn);
+  color: var(--fp-warn);
+}
+
+.fp-grid {
+  display: grid;
+  /* Basis 0 so the workspace grid receives exactly the space the intake
+     region leaves instead of fighting it in the shrink phase. */
+  flex: 1 1 0;
+  min-height: 0;
+  grid-template-columns: minmax(360px, 1.4fr) minmax(320px, 1fr);
+  grid-template-rows: minmax(220px, 1fr) auto;
+  grid-template-areas:
+    'view checks'
+    'secondary secondary';
+  gap: 8px;
+  overflow: auto;
+  align-content: start;
+}
+
+.fp-secondary {
+  grid-area: secondary;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fp-secondary-disclosure > summary,
+.fp-checks-disclosure > summary,
+.fp-view-info > summary,
+.fp-refresh-settings > summary {
+  cursor: pointer;
+  color: var(--fp-text-2);
+  border-radius: 5px;
+}
+
+.fp-secondary-disclosure > summary {
+  padding: 4px 10px;
+  border: 1px solid var(--fp-line);
+  background: var(--fp-card);
+}
+
+.fp-secondary-disclosure[open] > summary { margin-bottom: 6px; }
+.fp-secondary .fp-region { max-height: none; overflow: visible; }
+.fp-view-info { flex: 0 0 auto; margin-top: 4px; font-size: 12px; }
+.fp-view-info[open] { max-height: 45%; overflow: auto; }
+.fp-checks-disclosure > summary { padding: 2px 0; }
+.fp-refresh-settings { font-size: 12px; }
+.fp-refresh-settings[open] { display: flex; }
+.fp-refresh-settings .fp-toggle { display: flex; }
+.fp-intake-inline { display: inline-flex; align-items: center; gap: 6px; }
+.fitplate-panel summary:focus-visible,
+.fitplate-panel button:focus-visible { outline: 2px solid var(--fp-accent); outline-offset: 2px; }
+
+/* The folded workbench still shows the bound result, limits and real downloads.
+   The viewer stays mounted so expanding does not reset the camera or the model. */
+.fitplate-panel[data-layout='collapsed'] {
+  height: auto;
+  max-height: min(34vh, 340px);
+}
+.fitplate-panel[data-layout='collapsed'] .fp-grid {
+  flex: 0 1 auto;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+  grid-template-areas: 'checks';
+}
+.fitplate-panel[data-layout='collapsed'] .fp-region-view,
+.fitplate-panel[data-layout='collapsed'] .fp-secondary,
+.fitplate-panel[data-layout='collapsed'] .fp-intake-collapsed,
+.fitplate-panel[data-layout='collapsed'] .fp-checks-disclosure { display: none; }
+.fitplate-panel[data-layout='collapsed'] .fp-region-checks { padding: 0; background: none; border: none; }
+.fitplate-panel[data-layout='collapsed'] .fp-delivery-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin: 0;
+}
+.fitplate-panel[data-layout='input'] .fp-grid { display: none; }
+.fitplate-panel[data-layout='input'] .fp-region-intake { flex: 1 1 0; max-height: none; }
+
+@media (max-width: 1180px) {
+  /* Narrow host pane: single column, the panel itself scrolls once. */
+  .fitplate-panel {
+    overflow: auto;
+    max-height: none;
+  }
+
+  .fp-grid {
+    flex: 0 0 auto;
+    min-height: auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-template-areas: 'view' 'checks' 'secondary';
+  }
+
+  .fitplate-panel[data-run-stage='true'] .fp-grid { grid-template-rows: auto auto auto; }
+  .fp-secondary { grid-template-columns: 1fr; }
+  .fitplate-panel[data-layout='collapsed'] .fp-delivery-card { grid-template-columns: 1fr; }
+
+  .fp-region,
+  .fp-region-task,
+  .fp-region-checks,
+  .fp-region-versions {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .fp-view-body {
+    min-height: 260px;
+    max-height: 60vh;
+  }
+}
+
+.fp-region {
+  background: var(--fp-card);
+  border: 1px solid var(--fp-line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Backstop for hosts that give the slot no definite height: each region still
+   stays readable and scrolls instead of growing the page. */
+.fp-region-task,
+.fp-region-checks {
+  max-height: min(78vh, 760px);
+}
+
+.fp-region-versions {
+  max-height: min(46vh, 460px);
+}
+
+.fp-region-task {
+  grid-area: task;
+}
+
+.fp-region-view {
+  grid-area: view;
+  display: flex;
+  flex-direction: column;
+}
+
+.fp-region-checks {
+  grid-area: checks;
+}
+
+.fp-region-versions {
+  grid-area: versions;
+}
+
+.fp-empty {
+  color: var(--fp-text-3);
+}
+
+.fp-request {
+  margin: 0 0 8px;
+  padding: 6px 8px;
+  background: var(--fp-bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--fp-accent);
+}
+
+.fp-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 10px;
+  margin: 0;
+}
+
+.fp-facts dt {
+  color: var(--fp-text-3);
+  white-space: nowrap;
+}
+
+.fp-facts dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+/* -- 3D view ------------------------------------------------------------ */
+
+.fp-view-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.fp-toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--fp-line);
+  margin: 0 4px;
+}
+
+.fp-view-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 150px;
+  max-height: 72vh;
+  border: 1px solid var(--fp-line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(154, 162, 171, 0.09), rgba(47, 111, 208, 0.05));
+}
+
+.fp-canvas-host {
+  position: absolute;
+  inset: 0;
+}
+
+.fp-canvas-overlay {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  margin: 0;
+  z-index: 2;
+}
+
+.fp-animation-label {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--fp-warn-bg);
+  color: var(--fp-warn);
+  border: 1px solid var(--fp-warn);
+  z-index: 2;
+}
+
+.fp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.fp-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--fp-text-2);
+}
+
+.fp-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.fp-swatch-plate {
+  background: var(--fp-swatch-plate);
+}
+
+.fp-swatch-device {
+  background: var(--fp-swatch-device);
+}
+
+.fp-swatch-connector {
+  background: var(--fp-swatch-connector);
+}
+
+.fp-swatch-fail {
+  background: var(--fp-swatch-fail);
+}
+
+.fp-view-notes {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--fp-text-2);
+}
+
+/* -- checks ------------------------------------------------------------- */
+
+.fp-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 12px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.fp-badge-pass {
+  background: var(--fp-ok-bg);
+  color: var(--fp-ok);
+  border-color: var(--fp-ok);
+}
+
+.fp-badge-fail {
+  background: var(--fp-danger-bg);
+  color: var(--fp-danger);
+  border-color: var(--fp-danger);
+}
+
+.fp-badge-unknown,
+.fp-badge-missing {
+  background: var(--fp-bg);
+  color: var(--fp-text-2);
+  border-color: var(--fp-line);
+}
+
+.fp-badge-borderline,
+.fp-badge-warn {
+  background: var(--fp-warn-bg);
+  color: var(--fp-warn);
+  border-color: var(--fp-warn);
+}
+
+.fp-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fp-check {
+  border: 1px solid var(--fp-line);
+  border-left-width: 3px;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.fp-check:hover {
+  border-color: var(--fp-accent);
+}
+
+.fp-check-pass {
+  border-left-color: var(--fp-ok);
+}
+
+.fp-check-fail {
+  border-left-color: var(--fp-danger);
+}
+
+.fp-check-unknown,
+.fp-check-missing {
+  border-left-color: var(--fp-line);
+}
+
+.fp-check-borderline {
+  border-left-color: var(--fp-warn);
+}
+
+.fp-check-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fp-check-head b {
+  min-width: 30px;
+}
+
+.fp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.fp-chip {
+  background: var(--fp-bg);
+  border-radius: 4px;
+  padding: 0 5px;
+  color: var(--fp-text-2);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* -- check card: short readout + collapsed raw data --------------------- */
+
+.fp-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin-top: 4px;
+}
+
+.fp-measure {
+  background: var(--fp-bg);
+  border-radius: 4px;
+  padding: 0 6px;
+  color: var(--fp-text-3);
+  font-size: 12px;
+}
+
+.fp-measure b {
+  margin-left: 3px;
+  color: var(--fp-text);
+  font-weight: 600;
+}
+
+.fp-measure-ok b {
+  color: var(--fp-ok);
+}
+
+.fp-measure-warn {
+  background: var(--fp-warn-bg);
+  color: var(--fp-warn);
+}
+
+.fp-measure-warn b {
+  color: var(--fp-warn);
+}
+
+.fp-measure-muted {
+  background: transparent;
+  border: 1px dashed var(--fp-line);
+}
+
+.fp-details {
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--fp-text-2);
+}
+
+.fp-details > summary {
+  cursor: pointer;
+  color: var(--fp-accent);
+  width: fit-content;
+}
+
+.fp-details-body {
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--fp-bg);
+  overflow-wrap: anywhere;
+}
+
+.fp-details-body h4 {
+  margin: 6px 0 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fp-text-3);
+}
+
+.fp-details-body h4:first-child {
+  margin-top: 0;
+}
+
+.fp-detail-line {
+  margin: 4px 0 0;
+}
+
+.fp-required,
+.fp-reason,
+.fp-note,
+.fp-objects {
+  margin-top: 3px;
+  color: var(--fp-text-2);
+  font-size: 12px;
+}
+
+.fp-reason {
+  color: var(--fp-danger);
+}
+
+.fp-errors ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: var(--fp-danger);
+}
+
+/* -- versions ----------------------------------------------------------- */
+
+.fp-versions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 8px;
+}
+
+.fp-version {
+  border: 1px solid var(--fp-line);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.fp-version-selected {
+  border-color: var(--fp-accent);
+  box-shadow: 0 0 0 1px var(--fp-accent);
+}
+
+.fp-version-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.fp-version-meta {
+  color: var(--fp-text-3);
+  font-size: 12px;
+  margin-top: 3px;
+  word-break: break-all;
+}
+
+.fp-change {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: var(--fp-text-2);
+}
+
+.fp-change-summary {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--fp-warn-bg);
+  color: var(--fp-warn);
+  border: 1px solid var(--fp-warn);
+}
+
+.fp-artifacts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.fp-download-failing {
+  border-color: var(--fp-danger);
+  color: var(--fp-danger);
+}
+
+/* -- technical details (build identity, data channel) ------------------- */
+
+.fp-footer {
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--fp-line);
+  color: var(--fp-text-3);
+  font-size: 12px;
+}
+
+.fp-tech > summary {
+  cursor: pointer;
+  color: var(--fp-text-2);
+  width: fit-content;
+}
+
+.fp-tech-body p {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+/* -- host dark appearance ------------------------------------------------ */
+
+.dark .fitplate-panel,
+[data-agnes-appearance='dark'] .fitplate-panel {
+  --fp-bg: var(--agnes-bg-page, #16181c);
+  --fp-card: var(--agnes-bg-card, #1e2126);
+  --fp-text: var(--agnes-text-primary, #e8eaed);
+  --fp-text-2: var(--agnes-text-secondary, #b6bcc4);
+  --fp-text-3: var(--agnes-text-tertiary, #868d96);
+  --fp-line: var(--agnes-line-primary, #33373e);
+}
+
+/* ---------------------------------------------------------------------------
+   P02-05 intake form + confirmation card
+   --------------------------------------------------------------------------- */
+
+.fp-region-intake {
+  /* A share of the panel itself (the panel has a definite height), so the
+     workspace grid keeps real space instead of the intake form eating the
+     whole panel when the panel is bounded. No grow: after the intake region
+     takes at most its share, the grid (flex-basis 0) receives all the rest. */
+  flex: 0 0 auto;
+  max-height: 40%;
+  min-height: 0;
+  overflow: auto;
+}
+
+.fp-alert-info {
+  background: var(--fp-ok-bg);
+  border-color: var(--fp-line);
+  color: var(--fp-text-2);
+}
+
+.fp-intake-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.fp-intake-common-unit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fp-text-2);
+}
+
+.fp-intake-common-unit select {
+  font: inherit;
+}
+
+.fp-intake-demo-note {
+  margin: 0 0 8px;
+  color: var(--fp-warn);
+}
+
+.fp-intake-fieldset {
+  border: 1px solid var(--fp-line);
+  border-radius: 8px;
+  margin: 0 0 8px;
+  padding: 6px 10px 10px;
+}
+
+.fp-intake-fieldset > legend {
+  padding: 0 6px;
+  color: var(--fp-text-2);
+}
+
+.fp-intake-rows {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 16px;
+  margin: 4px 0;
+}
+
+.fp-intake-rows > label {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--fp-text-2);
+  min-width: 0;
+}
+
+.fp-intake-rows > label.fp-toggle {
+  flex-direction: row;
+  align-items: center;
+}
+
+.fp-intake-wide {
+  flex: 1 1 320px;
+}
+
+.fp-intake-wide textarea {
+  width: 100%;
+  font: inherit;
+  resize: vertical;
+}
+
+.fp-intake-rows input,
+.fp-intake-rows select,
+.fp-intake-table input,
+.fp-intake-table select {
+  font: inherit;
+  color: var(--fp-text);
+  background: var(--fp-bg);
+  border: 1px solid var(--fp-line);
+  border-radius: 6px;
+  padding: 2px 6px;
+  min-width: 0;
+}
+
+.fp-intake-num {
+  width: 5.5em;
+}
+
+.fp-intake-length {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fp-intake-unit {
+  color: var(--fp-text-3);
+  font-size: 12px;
+}
+
+.fp-intake-lock {
+  color: var(--fp-text-3);
+  font-size: 12px;
+}
+
+.fp-intake-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fp-text-2);
+  flex-wrap: wrap;
+}
+
+.fp-intake-table {
+  border-collapse: collapse;
+  margin: 4px 0;
+}
+
+.fp-intake-table th,
+.fp-intake-table td {
+  border: 1px solid var(--fp-line);
+  padding: 2px 6px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.fp-intake-table th {
+  color: var(--fp-text-2);
+  font-weight: 500;
+}
+
+.fp-intake-device {
+  margin-top: 6px;
+  border-top: 1px dashed var(--fp-line);
+  padding-top: 6px;
+}
+
+.fp-intake-device p {
+  margin: 2px 0;
+}
+
+.fp-intake-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+
+.fp-intake-primary {
+  font-weight: 600;
+}
+
+.fp-intake-issues ul {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.fp-intake-issues code,
+.fp-intake-block code {
+  overflow-wrap: anywhere;
+}
+
+.fp-intake-card {
+  border: 1px solid var(--fp-line);
+  border-left: 4px solid var(--fp-accent);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  background: var(--fp-card);
+}
+
+.fp-intake-card-expired {
+  border-left-color: var(--fp-warn);
+  opacity: 0.9;
+}
+
+.fp-intake-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.fp-outcome-ready {
+  background: var(--fp-ok-bg);
+  color: var(--fp-ok);
+  border-color: var(--fp-ok);
+}
+
+.fp-outcome-needs,
+.fp-outcome-conflict {
+  background: var(--fp-warn-bg);
+  color: var(--fp-warn);
+  border-color: var(--fp-warn);
+}
+
+.fp-outcome-unsupported {
+  background: var(--fp-danger-bg);
+  color: var(--fp-danger);
+  border-color: var(--fp-danger);
+}
+
+.fp-intake-summary dl.fp-facts {
+  margin: 4px 0;
+}
+
+.fp-intake-block {
+  margin-top: 8px;
+}
+
+.fp-intake-block h3 {
+  margin: 6px 0 2px;
+}
+
+.fp-intake-block ul {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.fp-intake-confirm {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.fp-intake-confirm p {
+  margin: 0;
+}
+
+.fp-intake-diagnostics li {
+  overflow-wrap: anywhere;
+}
+
+/* Program-verified text constraints: the quoted original clause and its re-derived mm bound. */
+.fp-intake-interpretations li {
+  margin-bottom: 6px;
+}
+
+.fp-intake-quote {
+  margin: 2px 0;
+  padding: 2px 8px;
+  border-left: 3px solid #b9c0c8;
+  background: #f6f7f9;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+/* ---------------------------------------------------------------------------
+   P02-07: version comparison + run-stage intake folding
+   --------------------------------------------------------------------------- */
+
+.fp-swatch-reference {
+  background: #8a5cf5;
+}
+
+.fp-badge-compare {
+  background: #efe7fd;
+  color: #5b34c9;
+  border-color: #8a5cf5;
+}
+
+.fp-compare-pick {
+  margin-left: 6px;
+}
+
+.fp-compare {
+  border: 1px dashed var(--fp-line);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin: 6px 0;
+  background: var(--fp-bg);
+}
+
+.fp-compare h3 {
+  margin: 8px 0 4px;
+}
+
+.fp-compare-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.fp-compare-table {
+  border-collapse: collapse;
+  margin: 4px 0;
+}
+
+.fp-compare-table th,
+.fp-compare-table td {
+  border: 1px solid var(--fp-line);
+  padding: 2px 8px;
+  text-align: left;
+}
+
+.fp-compare-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fp-compare-check {
+  border: 1px solid var(--fp-line);
+  border-radius: 6px;
+  padding: 1px 8px;
+  color: var(--fp-text-2);
+  font-size: 12px;
+}
+
+.fp-compare-check-changed {
+  border-color: var(--fp-warn);
+  color: var(--fp-warn);
+  background: var(--fp-warn-bg);
+}
+
+.fp-compare-failing {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--fp-text-2);
+}
+
+.fp-compare-g06 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.fp-compare-g06 > div {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fp-intake-collapsed {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  /* The folded summary must be genuinely compact: in the run stage it was
+     occupying ~126px (heading + paragraph + button) and starving the 3D grid. */
+  padding: 6px 10px;
+}
+
+.fp-intake-collapsed h2 {
+  margin-bottom: 0;
+  font-size: 13px;
+}
+
+.fp-intake-collapsed p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+/* Keep the folded summary to a single short line inside the run stage so the
+   grid keeps its height; the full guidance is still available when expanded. */
+.fitplate-panel[data-run-stage='true'] .fp-intake-collapsed {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fitplate-panel[data-run-stage='true'] .fp-intake-collapsed h2 {
+  margin: 0;
+}
+
+.fitplate-panel[data-run-stage='true'] .fp-intake-collapsed p {
+  flex: 1 1 240px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Keep delivery facts inside the scrollable checks column, preserving the 3D row's height. */
+.fp-delivery-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+  padding: 0.5rem;
+  margin: 0 0 0.5rem;
+  border: 1px solid var(--fp-line);
+  border-left: 4px solid var(--fp-warn);
+  border-radius: 8px;
+}
+.fp-delivery-card h2, .fp-delivery-card p { margin: 0.2rem 0; }
+.fp-delivery-exported, .fp-delivery-validated { border-left-color: var(--fp-ok); }
+.fp-delivery-failed { border-left-color: var(--fp-danger); }
+.fp-delivery-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; align-content: start; max-width: 18rem; }
+.fp-delivery-details { grid-column: 1 / -1; overflow-wrap: anywhere; }
+.fp-delivery-measure { font-weight: 600; }
+.fp-delivery-main { overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .fp-delivery-card { grid-template-columns: minmax(0, 1fr); }
+  .fp-delivery-actions { max-width: none; }
+}
+
+/* 2026-10-13 user usability feedback: guided input and consistent panel controls. */
+.fitplate-panel { border-top: 1px solid var(--fp-line); gap: 8px; font-size: 14px; }
+.fitplate-panel[data-layout='input'] { height: min(61vh, 710px); }
+.fitplate-panel[data-layout='focused'] { height: min(74vh, 850px); }
+.fitplate-panel .fp-header { flex: 0 0 auto; background: var(--fp-card); border-radius: 10px; }
+.fitplate-panel .fp-header-actions { gap: 6px; }
+.fitplate-panel .fp-title { min-width: 0; }
+.fp-brand-cn { color: var(--fp-accent); margin-left: 6px; }
+.fitplate-panel .fp-phase { font-size: 12px; }
+.fitplate-panel .fp-refresh-settings { display: none; }
+.fitplate-panel[data-layout='collapsed'] { height: auto; min-height: 52px; max-height: none; padding-top: 6px; padding-bottom: 6px; }
+.fitplate-panel[data-layout='collapsed'] > :not(.fp-header) { display: none !important; }
+.fitplate-panel[data-input-active='true'] .fp-grid { display: none; }
+.fitplate-panel[data-input-active='true'] .fp-region-intake { flex: 1 1 0; max-height: none; }
+.fitplate-panel .fp-guided-intake { padding: 18px 22px; border-radius: 12px; scroll-behavior: smooth; }
+.fp-guide-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.fitplate-panel .fp-guide-heading h2 { font-size: 20px; line-height: 1.4; margin: 4px 0; }
+.fp-eyebrow { font-size: 12px; color: var(--fp-accent); }
+.fp-welcome > p { max-width: 58rem; color: var(--fp-text-2); margin: 6px 0 16px; }
+.fp-start-options { display: grid; grid-template-columns: 1.15fr 1fr; gap: 14px; }
+.fitplate-panel button.fp-start-card { text-align: left; white-space: normal; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 20px; border-radius: 12px; background: var(--fp-card); border: 1px solid var(--fp-line); }
+.fitplate-panel button.fp-start-recommended { border: 2px solid var(--fp-accent); background: color-mix(in srgb, var(--fp-accent) 6%, var(--fp-card)); }
+.fp-start-card strong { font-size: 19px; color: var(--fp-text); }
+.fp-start-card span { color: var(--fp-text-2); line-height: 1.6; }
+.fp-start-card small { font-size: 12px; color: var(--fp-text-3); }
+.fp-input-steps { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
+.fitplate-panel .fp-input-steps button { background: transparent; border: 1px solid transparent; color: var(--fp-text-2); padding: 6px 9px; }
+.fp-input-steps b { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--fp-bg); margin-right: 6px; font-size: 12px; }
+.fitplate-panel .fp-input-steps [aria-current='step'] { color: var(--fp-accent); background: color-mix(in srgb, var(--fp-accent) 8%, var(--fp-card)); border-color: color-mix(in srgb, var(--fp-accent) 25%, var(--fp-line)); }
+.fp-next-action, .fp-run-guidance { padding: 10px 12px; margin: 0 0 12px; border-radius: 8px; background: color-mix(in srgb, var(--fp-accent) 7%, var(--fp-card)); color: var(--fp-text); line-height: 1.6; }
+.fp-run-guidance { flex: 0 0 auto; margin: 0; padding: 6px 12px; font-size: 12px; }
+.fp-field-help { color: var(--fp-text-2); line-height: 1.6; margin: 4px 0 12px; }
+.fp-guided-intake [data-form-step] { display: none; }
+.fp-guided-intake[data-input-step='0'] [data-form-step='0'],
+.fp-guided-intake[data-input-step='1'] [data-form-step='1'],
+.fp-guided-intake[data-input-step='2'] [data-form-step='2'] { display: block; }
+.fp-guided-intake[data-input-step='-1'] > .fp-intake-toolbar,
+.fp-guided-intake[data-input-step='3'] > .fp-intake-toolbar { display: none; }
+.fp-guided-intake[data-input-waiting='true'] [data-form-step] { display: none; }
+.fitplate-panel .fp-guided-intake .fp-intake-fieldset { padding: 14px 16px; border-radius: 10px; }
+.fp-guided-intake .fp-intake-fieldset > legend { font-size: 15px; font-weight: 600; }
+.fp-guided-intake .fp-intake-rows { gap: 14px; }
+.fp-guided-intake .fp-intake-actions { position: sticky; bottom: -18px; z-index: 2; background: var(--fp-card); border-top: 1px solid var(--fp-line); padding: 12px 0; margin-top: 14px; }
+.fitplate-panel [hidden] { display: none !important; }
+.fp-intake-primary { font-weight: 600; }
+.fp-review-request { font-size: 15px; line-height: 1.6; }
+.fp-review-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.fp-review-cards > section { border: 1px solid var(--fp-line); border-radius: 10px; padding: 12px; min-width: 0; overflow-wrap: anywhere; }
+.fp-review-cards h3 { font-size: 14px; display: flex; justify-content: space-between; align-items: center; gap: 6px; margin: 0 0 10px; }
+.fp-review-cards h3 button { padding: 2px 7px; font-weight: normal; font-size: 12px; }
+.fp-review-cards p { color: var(--fp-text-2); margin: 6px 0; }
+.fp-gap-readout { padding: 10px 12px; border-radius: 10px; background: var(--fp-bg); display: flex; align-items: baseline; flex-wrap: wrap; gap: 7px 12px; }
+.fp-gap-readout > strong { font-size: 28px; line-height: 1.2; color: var(--fp-text); }
+.fp-gap-readout small { font-size: 14px; font-weight: normal; }
+.fp-gap-readout p { flex-basis: 100%; color: var(--fp-text-2); }
+.fp-result-next { color: var(--fp-text-2); line-height: 1.6; }
+.fitplate-panel .fp-delivery-card { padding: 12px; border-radius: 10px; gap: 10px; }
+.fitplate-panel .fp-delivery-card h2 { font-size: 17px; line-height: 1.45; }
+.fitplate-panel .fp-delivery-actions { max-width: none; }
+.fitplate-panel .fp-delivery-details { font-size: 12px; }
+main#main-content:has(#approval:not([hidden])) div[data-agnes-slot-mount='workbench.panel'] .fitplate-panel:not([data-layout='collapsed']) { height: min(22vh, 240px); }
+@media (max-width: 1180px) { .fp-review-cards { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .fp-start-options { grid-template-columns: 1fr; } .fitplate-panel .fp-guided-intake { padding: 12px; } .fp-title > .fp-muted { display: none; } }
+
+.fitplate-panel button.fp-intake-primary { background: var(--fp-accent); border-color: var(--fp-accent); color: #fff; padding: 9px 15px; border-radius: 8px; }
+.fitplate-panel button.fp-intake-primary:disabled { opacity: .5; cursor: not-allowed; }
+.fitplate-panel .fp-intake-confirm { position: sticky; bottom: -18px; background: var(--fp-card); border-top: 1px solid var(--fp-line); padding: 12px 0 4px; z-index: 2; }
+.fitplate-panel.fp-theme-light { --fp-card: #ffffff; --fp-bg: #f4f6fa; --fp-accent: #285cd6; }
+
+.fitplate-panel[data-layout='balanced'] { height: min(62vh, 710px); }
+.fitplate-panel .fp-delivery-main { display: flex; flex-direction: column; gap: 4px; }
+.fitplate-panel .fp-delivery-main h2 { font-size: 16px; margin: 0; }
+.fitplate-panel .fp-delivery-main p { margin: 0; }
+.fitplate-panel .fp-result-next { font-size: 12px; line-height: 1.5; }
+.fitplate-panel .fp-gap-readout { padding: 8px 10px; gap: 3px 10px; }
+.fitplate-panel .fp-gap-readout > strong { font-size: 25px; }
+.fitplate-panel .fp-delivery-main > .fp-muted { font-size: 12px; }
+.fitplate-panel .fp-delivery-actions { position: sticky; bottom: 0; background: var(--fp-card); padding: 4px 0; z-index: 1; }

@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "task_id": "banner-q20pd-mount-01",
+  "revision": 1,
+  "units": "mm",
+  "frame": "plate_lower_left_bottom_xyz",
+  "scene_ref": "banner-q20pd-mount-01.scene.json",
+  "scene_sha256": "eef75d3b0e351c4ae5d056cd4e240f62ea2aaec87878dbce087e978569371172",
+  "request": {
+    "language": "zh-CN",
+    "text": "把 Banner Q20PD 传感器安装到这块自设底座上：底座四孔、板厚和固定立柱是自设演示环境不能改；设备中心 X 固定，只允许沿 Y 在设计者给定的条带内移动，请保证孔边材料与连接器出线空间。"
+  },
+  "plate": {
+    "width": 80,
+    "height": 80,
+    "thickness": 4,
+    "locked": ["width", "height", "thickness"],
+    "editable": {}
+  },
+  "base_holes": {
+    "diameter": 4.4,
+    "centers": [
+      [8, 8],
+      [72, 8],
+      [8, 72],
+      [72, 72]
+    ],
+    "locked": true
+  },
+  "sensor": {
+    "model_id": "banner-q20pd",
+    "body_size": [20, 32, 12],
+    "hole_offsets": [
+      [6.7, -12.7],
+      [6.7, 12.7]
+    ],
+    "hole_diameter": 3.4,
+    "allowed_center_x": { "min": 40, "max": 40 },
+    "allowed_center_y": { "min": 28, "max": 45 },
+    "allowed_rotation_deg": [0]
+  },
+  "requirements": {
+    "minimum_free_clearance": 1.0,
+    "minimum_edge_ligament": 3.0,
+    "minimum_hole_ligament": 3.0
+  },
+  "tolerances": {
+    "geometry_epsilon_mm": 0.001,
+    "interference_volume_epsilon_mm3": 0.0001,
+    "dimensional_tolerance_mm": 0.05
+  },
+  "provenance": {
+    "kind": "user_supplied",
+    "source": "混合来源公开规格演示案例：设备包络/孔距/内螺纹接口来自 Banner Q20 Series 手册 127816（厂商 PDF p4 型号表、p5 安装说明、p9 尺寸图，URL 与全文 SHA 见 docs/public-case-q20pd.md）；板体、底座孔、螺钉头、固定柱、允许移动条带、连接器包络与要求值均为自设演示假设（非实测、非访谈、无实物）。孔位 offsets 由 p9 侧视图坐标推导（见字段来源映射）。",
+    "review_status": "awaiting_geometry_verification"
+  }
+}

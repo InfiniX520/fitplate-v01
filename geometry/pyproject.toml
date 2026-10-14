@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fitplate"
+version = "0.1.0.dev0"
+description = "FitPlate geometry layer: frozen contract, CadQuery generation, independent STEP measurement, input classification and evidence export"
+readme = "README.md"
+requires-python = ">=3.12"
+# Real, installed dependencies (the project venv was created from an explicit pre-check and is
+# recorded in geometry/requirements.lock.txt; pip freeze: cadquery 2.8.0, cadquery-ocp 7.9.3.1.1
+# -- OCCT 7.9.3.1.1 / VTK 9.6.2 -- and their transitive closure).
+dependencies = [
+  "cadquery==2.8.0",
+]
+
+[project.optional-dependencies]
+# Test/validation tooling actually used by this repository's suites.
+dev = [
+  "pytest==9.1.1",
+  "jsonschema==4.26.0",
+]
+
+[tool.setuptools]
+packages = ["fitplate"]
+
+# The frozen JSON Schema documents live in ../schemas and are resolved from the checkout at
+# runtime (fitplate.schema.repo_root()); they are deliberately not duplicated into the wheel.

@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0",
+  "scene_id": "banner-q20pd-mount-01",
+  "units": "mm",
+  "frame": "plate_lower_left_bottom_xyz",
+  "objects": [
+    {
+      "id": "fixed_post",
+      "kind": "cylinder",
+      "role": "fixed_obstacle",
+      "axis_xy": [28, 50],
+      "radius": 3,
+      "z_range": [4, 20]
+    },
+    {
+      "id": "screw_head_h00",
+      "kind": "cylinder",
+      "role": "screw_head_envelope",
+      "base_hole_index": 0,
+      "axis_xy": [8, 8],
+      "radius": 4,
+      "z_range": [4, 8]
+    },
+    {
+      "id": "screw_head_h01",
+      "kind": "cylinder",
+      "role": "screw_head_envelope",
+      "base_hole_index": 1,
+      "axis_xy": [72, 8],
+      "radius": 4,
+      "z_range": [4, 8]
+    },
+    {
+      "id": "screw_head_h02",
+      "kind": "cylinder",
+      "role": "screw_head_envelope",
+      "base_hole_index": 2,
+      "axis_xy": [8, 72],
+      "radius": 4,
+      "z_range": [4, 8]
+    },
+    {
+      "id": "screw_head_h03",
+      "kind": "cylinder",
+      "role": "screw_head_envelope",
+      "base_hole_index": 3,
+      "axis_xy": [72, 72],
+      "radius": 4,
+      "z_range": [4, 8]
+    },
+    {
+      "id": "connector_access",
+      "kind": "box_local_xy_abs_z",
+      "role": "connector_access",
+      "local_xy_range": [
+        { "min": -20, "max": -6 },
+        { "min": -28, "max": -12 }
+      ],
+      "absolute_z_range": [8, 12]
+    }
+  ],
+  "support_contacts": [
+    { "a": "sensor_body", "b": "plate_top", "kind": "support" }
+  ],
+  "provenance": {
+    "kind": "user_supplied",
+    "source": "自设演示环境（本仓库作者设定的假设，非实测、非用户访谈）：底座孔/螺钉头/固定柱/连接器包络均为假设值；设备接口尺寸来自 Banner Q20 Series 手册 127816（厂商 PDF p4/p9）。逐字段来源见 docs/public-case-q20pd.md 与 data/devices/banner-q20pd.json。",
+    "review_status": "awaiting_geometry_verification"
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "schema": "fitplate.client-build/1",
+  "name": "@fitplate/plugin-client",
+  "version": "0.1.2",
+  "buildHash": "451ae18e54f3a0a76ce1af72abdf77e7e3b1a51734c1e3ea135400357bf64ec6",
+  "buildHashAlgorithm": "sha256",
+  "buildHashCovers": "script-bytes+options+tools+client-and-shared-sources+externals",
+  "sourceHash": "899c64ae7a47faffdb0863284fdede48bf4167922bce6f7adfdf1789cadc25bd",
+  "builtAt": "2026-10-14T00:45:38.124Z",
+  "builtWith": {
+    "esbuild": "0.28.2",
+    "three": "0.186.1",
+    "node": "v24.21.0"
+  },
+  "hostExternals": {
+    "source": "../../ANG/agnes-harness/packages/web-client/src/externals.ts",
+    "list": [
+      "react",
+      "react/jsx-runtime",
+      "react-dom",
+      "react-dom/client",
+      "@agnes/cordis",
+      "@agnes/web-client"
+    ]
+  },
+  "sources": [
+    {
+      "path": "../src/report-facts.d.mts",
+      "sha256": "564eb0e06d2ef01c995df2b5c33b9cd3f2b0e40ae2a17469e225fdafd92f7213"
+    },
+    {
+      "path": "../src/report-facts.mjs",
+      "sha256": "826da908b4c994e64121a28e3f3232f3e7c25489b6e0e00af1fec1ec82d3806b"
+    },
+    {
+      "path": "adapter.ts",
+      "sha256": "e8814cd0bcb379a9fca4afe15a176bc7caf76e8c1f3ff90d5131db70ba090604"
+    },
+    {
+      "path": "build-info.ts",
+      "sha256": "06e15443a43b4e77ffdf407f5f3f6d5fba348a2d60156b256e9438de614b34e7"
+    },
+    {
+      "path": "controller.ts",
+      "sha256": "40921e36dca7169d0d601f584a7986508ff48bce55e8ecfab5fda85aa01a0be0"
+    },
+    {
+      "path": "delivery-card.tsx",
+      "sha256": "9087888201d75f2e08adb542515131378fef0d28e60a17bb1e0c6f30910966a3"
+    },
+    {
+      "path": "index.tsx",
+      "sha256": "5c4986de47b522949bf8ebd790cf43266485f31775685c244754272fed5682d6"
+    },
+    {
+      "path": "intake-controller.ts",
+      "sha256": "f8af499fdb0c6f61d75868bae56881cce6574941e19885575b03e642c8e3254d"
+    },
+    {
+      "path": "intake-form.tsx",
+      "sha256": "3c2bfcbb80e6e79ccd334c1ac74814adf02746fcd17debd2463e75f87deedebb"
+    },
+    {
+      "path": "intake-model.ts",
+      "sha256": "0c605918312b02b6fabef3c14d64eef6ea7ccebbd86ac08506bd24c69a6118f6"
+    },
+    {
+      "path": "mesh.ts",
+      "sha256": "d8a66ea78293cd04225513ef10749f57afe209f343f559de6e9f033dc31f68af"
+    },
+    {
+      "path": "panel.tsx",
+      "sha256": "40229fc8b4f90334000e330ef360742bc417268a0a673f4d97e74220c46bd425"
+    },
+    {
+      "path": "scene-model.ts",
+      "sha256": "e3a3846aeca9868deb5c99350727d25fc1b814307f8a93da3b356ee8c68ff18a"
+    },
+    {
+      "path": "style.css",
+      "sha256": "08ae07540dca32cd829ac08374bab5eaeaac848b51e47f7ae44ee053459de43f"
+    },
+    {
+      "path": "types/host.d.ts",
+      "sha256": "3d173d0668d434fef59cc5c9c7b044c133b936dbad92ce348e09b4e23d042ea0"
+    },
+    {
+      "path": "viewer.ts",
+      "sha256": "ae323652b015f6eaf8ea0fd5b291ac7d6ca336ee802adef41a88639da1f29b56"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "./client/index.js",
+      "bytes": 774181,
+      "sha256": "19a9f9e0f0687800941419bc0240443226fc323efe1cca7814670cb22c9c863e"
+    },
+    {
+      "path": "./client/index.js.map",
+      "bytes": 3554030,
+      "sha256": "bf480d408a4e82c8614ef59e573f2a9e6a99987c810831bc5db811376b1e3a0f"
+    },
+    {
+      "path": "./client/index.css",
+      "bytes": 28566,
+      "sha256": "29ea9a7948c927f94c473df5f1fbb1d577515594ebb5e195cba7b86e64b01316"
+    }
+  ],
+  "descriptorHints": {
+    "descriptorPath": "./extensions/main/agnes.client.json",
+    "entry": "./client/index.js",
+    "styles": [
+      "./client/index.css"
+    ],
+    "slots": [
+      "workbench.panel"
+    ],
+    "services": [
+      "fitplate.run",
+      "fitplate.scene",
+      "fitplate.artifact"
+    ]
+  }
+}

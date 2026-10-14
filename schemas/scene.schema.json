@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fitplate.invalid/schemas/scene.schema.json",
+  "title": "FitPlate SceneSpec",
+  "description": "Fixed environment plus device envelopes for one task, in the same 'plate_lower_left_bottom_xyz' mm frame as the TaskSpec. All objects live in one uniform 'objects' array so a single geometry pass can consume them: cylinders (fixed obstacles such as the mounting post, and screw-head envelopes centered on the frozen base holes) and boxes defined as a local X/Y envelope times an absolute Z envelope (the connector access volume, which moves with the device center). 'support_contacts' lists the pairs that are allowed to touch: the sensor base resting on the plate top is expected contact, and this exemption covers zero distance for that pair only -- it never excuses penetration. The scene file is pinned by TaskSpec.scene_ref + scene_sha256.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "scene_id",
+    "units",
+    "frame",
+    "objects",
+    "support_contacts",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "scene_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,62}$",
+      "description": "Must equal the referencing task's task_id."
+    },
+    "units": { "const": "mm" },
+    "frame": { "const": "plate_lower_left_bottom_xyz" },
+    "objects": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/cylinder_object" },
+          { "$ref": "#/$defs/box_local_xy_abs_z_object" }
+        ]
+      }
+    },
+    "support_contacts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/support_contact" }
+    },
+    "provenance": { "$ref": "#/$defs/provenance" }
+  },
+  "$defs": {
+    "object_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,63}$"
+    },
+    "participant_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,63}$",
+      "description": "A scene object id, or one of the reserved participants 'sensor_body' and 'plate_top'."
+    },
+    "cylinder_object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "role", "axis_xy", "radius", "z_range"],
+      "properties": {
+        "id": { "$ref": "#/$defs/object_id" },
+        "kind": { "const": "cylinder" },
+        "role": { "enum": ["fixed_obstacle", "screw_head_envelope"] },
+        "axis_xy": { "$ref": "#/$defs/xy_pair" },
+        "radius": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000 },
+        "z_range": { "$ref": "#/$defs/z_range" },
+        "base_hole_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 31,
+          "description": "Required for screw_head_envelope: the index into the task's base_holes.centers this envelope covers. Must be absent for fixed obstacles."
+        }
+      }
+    },
+    "box_local_xy_abs_z_object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "role", "local_xy_range", "absolute_z_range"],
+      "properties": {
+        "id": { "$ref": "#/$defs/object_id" },
+        "kind": { "const": "box_local_xy_abs_z" },
+        "role": { "const": "connector_access" },
+        "local_xy_range": {
+          "type": "array",
+          "prefixItems": [
+            { "$ref": "#/$defs/coord_range" },
+            { "$ref": "#/$defs/coord_range" }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "absolute_z_range": { "$ref": "#/$defs/z_range" }
+      }
+    },
+    "support_contact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["a", "b", "kind"],
+      "properties": {
+        "a": { "$ref": "#/$defs/participant_id" },
+        "b": { "$ref": "#/$defs/participant_id" },
+        "kind": {
+          "const": "support",
+          "description": "Only support contacts can be declared, because only they exempt zero distance. Penetration is never exempt."
+        }
+      }
+    },
+    "mm_number": {
+      "type": "number",
+      "minimum": -10000,
+      "maximum": 10000
+    },
+    "xy_pair": {
+      "type": "array",
+      "prefixItems": [
+        { "$ref": "#/$defs/mm_number" },
+        { "$ref": "#/$defs/mm_number" }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "z_range": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number", "minimum": 0, "maximum": 10000 },
+        { "type": "number", "minimum": 0, "maximum": 10000 }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "coord_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "$ref": "#/$defs/mm_number" },
+        "max": { "$ref": "#/$defs/mm_number" }
+      }
+    },
+    "connector_access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["local_xy_range", "absolute_z_range"],
+      "description": "Conservative envelope a connector/cable needs. X/Y are relative to the device center (so the envelope moves with the device), Z is absolute world height. The envelope states its own frame; it is not a simulated insertion motion.",
+      "properties": {
+        "local_xy_range": {
+          "type": "array",
+          "prefixItems": [
+            { "$ref": "#/$defs/coord_range" },
+            { "$ref": "#/$defs/coord_range" }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "absolute_z_range": { "$ref": "#/$defs/z_range" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "source", "review_status"],
+      "properties": {
+        "kind": {
+          "enum": ["synthetic_teaching_fixture", "user_supplied", "measured_device", "vendor_datasheet"],
+          "description": "Where the numbers come from. Every dev teaching fixture must declare synthetic_teaching_fixture; teaching data must never be reported as real device data."
+        },
+        "source": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "review_status": {
+          "enum": ["not_reviewed", "awaiting_geometry_verification", "verified"]
+        }
+      }
+    }
+  }
+}

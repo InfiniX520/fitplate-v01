@@ -1,0 +1,101 @@
+{
+  "schema_version": "1.0",
+  "kind": "fitplate-device-card",
+  "device_id": "banner-q20pd",
+  "name": "Banner Q20PD（Q20 系列，2 m 出线版本）",
+  "vendor": "Banner Engineering",
+  "status": {
+    "source_level": "datasheet_derived",
+    "geometry_level": "pending",
+    "physical_level": "not_available_no_hardware",
+    "note": "来源级：字段已按厂商 PDF 页码映射（含坐标推导与设计假设分列）；几何级：尚未运行任何 CAD/验收；实物级：用户无实物、无访谈、无用户反馈。"
+  },
+  "sources": [
+    {
+      "id": "q20-manual-127816",
+      "type": "vendor_datasheet",
+      "title": "Banner Q20 Series Sensor instruction manual (p/n 127816)",
+      "url": "https://info.bannerengineering.com/cs/groups/public/documents/literature/127816.pdf",
+      "sha256": "cdbf21fb051cd9fd004b3ca6ebb99dde61bdb8e4756f10c4e453e532cc1fb248",
+      "bytes": 1728757,
+      "pages_used": [4, 5, 9],
+      "notes": "下载副本页脚日期 2026-04-28；p9 为尺寸图（左图为侧安装视图），p4 型号表，p5 安装说明文本。资料核查由监督实际查看打印页完成，本卡片按页码记录。",
+      "local_copy": "ANG/logs/plan02/sources/banner-q20-127816.pdf（监督日志目录的原始下载副本；不复制进任何模型工作区）"
+    }
+  ],
+  "fields": {
+    "body_size_mm": {
+      "value": [20, 32, 12],
+      "source": "q20-manual-127816",
+      "page": 9,
+      "method": "datasheet_direct",
+      "note": "侧安装面上包络 20×32（X 向×Y 向）、法向宽 12（Z）。矩形只是最大尺寸组成的**保守包络**，原件有倒角/非长方体，不能当详细外形 CAD。"
+    },
+    "mounting_hole_pitch_mm": { "value": 25.4, "source": "q20-manual-127816", "page": 9, "method": "datasheet_direct" },
+    "hole_edge_margins_mm": {
+      "value": { "from_right_edge": 3.3, "from_top_edge": 3.3 },
+      "source": "q20-manual-127816",
+      "page": 9,
+      "method": "datasheet_direct"
+    },
+    "hole_offsets_mm": {
+      "value": [[6.7, -12.7], [6.7, 12.7]],
+      "source": "q20-manual-127816",
+      "page": 9,
+      "method": "coordinate_derivation",
+      "derivation": "取 p9 左侧视图为安装面：X 向右、Y 向上、Z 离板面，设备包络中心为局部原点。上孔距顶边 3.3 ⇒ y=16−3.3=12.7；孔距 25.4 ⇒ 另一孔 y=12.7−25.4=−12.7；两孔距右侧边 3.3 ⇒ x=10−3.3=6.7。该 offsets 是坐标变换推导值，不是原厂再标注的第二个数字。"
+    },
+    "device_thread_interface": {
+      "value": "2 × M3×0.5 threaded inserts（设备内螺纹）",
+      "source": "q20-manual-127816",
+      "page": 9,
+      "method": "datasheet_direct",
+      "note": "这是**设备侧接口**；板侧通孔直径不由此唯一决定（见下）。"
+    },
+    "adapter_plate_hole_diameter_mm": {
+      "value": 3.4,
+      "source": "design_choice",
+      "method": "design_assumption",
+      "note": "转接板通孔 3.4 mm 是**本项目的设计选择**（M3 螺钉的间隙孔），不是原厂尺寸；原厂只给设备内螺纹 M3×0.5，绝不能把 M3 当直径 3 的通孔。"
+    },
+    "mounting_torque_max_nm": {
+      "value": 0.56,
+      "source": "q20-manual-127816",
+      "page": 5,
+      "method": "datasheet_direct",
+      "note": "手册上的最大安装扭矩；本项目不做扭矩/强度/制造认证，仅记录。"
+    },
+    "connector_access_envelope_mm": {
+      "value": { "local_xy_range": [[-20, -6], [-28, -12]], "absolute_z_range": [8, 12] },
+      "source": "design_assumption",
+      "method": "design_assumption",
+      "note": "2 m 出线在 p9 图形左下侧；原厂**未给**最小弯曲半径与真实外部视线。该单一 box 是演示用操作包络假设；当前 scene 只检查这一个 box，不假装检查第二处线缆空间。"
+    },
+    "allowed_motion": {
+      "value": { "center_x_mm": [40, 40], "center_y_mm": [28, 45], "rotation_deg": [0] },
+      "source": "design_assumption",
+      "method": "design_assumption",
+      "note": "自设用途许可（演示）：X 固定、Y 限于条带；不声称现实光学对准/视线已验证。"
+    },
+    "environment_plate_and_fixtures": {
+      "value": { "plate": [80, 80, 4], "base_holes": [[8, 8], [72, 8], [8, 72], [72, 72]], "base_hole_diameter_mm": 4.4, "screw_head": { "radius_mm": 4, "z_range_mm": [4, 8] }, "fixed_post": { "axis_xy": [28, 50], "radius_mm": 3, "z_range_mm": [4, 20] } },
+      "source": "design_assumption",
+      "method": "design_assumption",
+      "note": "全部为自设演示环境，逐项在 docs/public-case-q20pd.md 标明；物理贴板、无未建模垫柱/转向。"
+    },
+    "requirements": {
+      "value": { "minimum_free_clearance_mm": 1.0, "minimum_edge_ligament_mm": 3.0, "minimum_hole_ligament_mm": 3.0, "dimensional_tolerance_mm": 0.05 },
+      "source": "design_assumption",
+      "method": "design_assumption",
+      "note": "自设要求值（演示），非厂商/用户给出。"
+    }
+  },
+  "unverified": [
+    "出线方向与最小弯曲半径（原厂未公布）",
+    "实际安装的光学性能（250 mm 标称测试条件不构成本项目验证）",
+    "螺钉啮合长度与螺钉长度选择",
+    "强度、扭矩、制造与平面度",
+    "实物装配（用户无实物，无访谈、无用户反馈）"
+  ],
+  "bundle_ref": "examples/public-spec/banner-q20pd-mount-01/（未注册、未确认的公开自设演示 bundle；不在 fixtures/dev，也不在 prepare-workspace 注册表中）"
+}

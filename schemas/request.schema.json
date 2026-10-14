@@ -1,0 +1,491 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fitplate.invalid/schemas/request.schema.json",
+  "title": "FitPlate IntakeRequest",
+  "description": "One user request for a new adapter-plate task, as the browser form will produce it: registered device card id, structured form fields, and the short Chinese requirement as原文. Every length is an explicit {value, unit} pair over the fixed table mm/cm/m/um/in; the program converts to mm and refuses booleans, non-finite numbers and values without a unit. The form never carries device dimensions - those come from the registered device card the program reads (design values are named as such on the card and are never presented as vendor data). A request is immutable: changing anything produces a new request_revision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "request_revision",
+    "device_card_id",
+    "language",
+    "text",
+    "form"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "request_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,40}$",
+      "description": "Stable request identity; a new revision keeps the same id."
+    },
+    "request_revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "device_card_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,62}$",
+      "description": "Card id inside the program-registered device directory; never a file path."
+    },
+    "language": {
+      "const": "zh-CN"
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "The user's short requirement, kept verbatim for source refs. Only the documented pattern subset is interpreted; the rest stays uninterpreted text."
+    },
+    "form": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plate",
+        "base_holes",
+        "mounting"
+      ],
+      "properties": {
+        "plate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "width",
+            "height",
+            "thickness",
+            "editable"
+          ],
+          "properties": {
+            "width": {
+              "$ref": "#/$defs/length"
+            },
+            "height": {
+              "$ref": "#/$defs/length"
+            },
+            "thickness": {
+              "$ref": "#/$defs/length"
+            },
+            "editable": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "width": {
+                  "$ref": "#/$defs/length_range"
+                },
+                "height": {
+                  "$ref": "#/$defs/length_range"
+                }
+              },
+              "description": "Only dimensions listed here may be changed by a proposal; the thickness is never editable in the new intake path (kept locked by default)."
+            }
+          }
+        },
+        "base_holes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "diameter",
+            "centers"
+          ],
+          "properties": {
+            "diameter": {
+              "$ref": "#/$defs/length"
+            },
+            "centers": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 32,
+              "items": {
+                "$ref": "#/$defs/xy_pair"
+              }
+            }
+          }
+        },
+        "mounting": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "plate_hole_diameter": {
+              "$ref": "#/$defs/length",
+              "description": "Optional in the form: when absent the compiler asks for a numeric diameter. A thread specification (M3) is never accepted as a diameter."
+            },
+            "rotation_deg": {
+              "const": 0
+            },
+            "movement_license": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/license_fixed"
+                },
+                {
+                  "$ref": "#/$defs/license_x"
+                },
+                {
+                  "$ref": "#/$defs/license_y"
+                },
+                {
+                  "$ref": "#/$defs/license_xy"
+                }
+              ],
+              "description": "The movement permission FACT, with its source ref. No movement is ever inferred from the model's words: a request to move without a licence is a conflict, and a licence without a source is refused. When the licence is absent the compiler asks for it (NEEDS_INPUT) - immobility is never assumed silently either."
+            }
+          }
+        },
+        "environment": {
+          "$ref": "#/$defs/environment"
+        },
+        "requirements": {
+          "$ref": "#/$defs/requirements"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "length": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "unit"
+      ],
+      "properties": {
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "unit": {
+          "enum": [
+            "mm",
+            "cm",
+            "m",
+            "um",
+            "in"
+          ]
+        }
+      },
+      "description": "Explicit length and unit. A null value is a missing user fact: intake must ask and cannot confirm or freeze it. Frozen task and scene lengths remain numeric."
+    },
+    "length_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min",
+        "max"
+      ],
+      "properties": {
+        "min": {
+          "$ref": "#/$defs/length"
+        },
+        "max": {
+          "$ref": "#/$defs/length"
+        }
+      }
+    },
+    "xy_pair": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/length"
+        },
+        {
+          "$ref": "#/$defs/length"
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "license_fixed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "center",
+        "source_ref"
+      ],
+      "properties": {
+        "mode": {
+          "const": "fixed"
+        },
+        "center": {
+          "$ref": "#/$defs/xy_pair"
+        },
+        "source_ref": {
+          "type": "string",
+          "pattern": "^(form:[a-z0-9._-]{1,64}|text\\[[0-9]{1,6}:[0-9]{1,6}\\](\\s.{0,80})?)$"
+        }
+      }
+    },
+    "license_x": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "center_x",
+        "center_y",
+        "source_ref"
+      ],
+      "properties": {
+        "mode": {
+          "const": "x_range"
+        },
+        "center_x": {
+          "$ref": "#/$defs/length_range"
+        },
+        "center_y": {
+          "$ref": "#/$defs/length"
+        },
+        "source_ref": {
+          "type": "string",
+          "pattern": "^(form:[a-z0-9._-]{1,64}|text\\[[0-9]{1,6}:[0-9]{1,6}\\](\\s.{0,80})?)$"
+        }
+      }
+    },
+    "license_y": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "center_x",
+        "center_y",
+        "source_ref"
+      ],
+      "properties": {
+        "mode": {
+          "const": "y_range"
+        },
+        "center_x": {
+          "$ref": "#/$defs/length"
+        },
+        "center_y": {
+          "$ref": "#/$defs/length_range"
+        },
+        "source_ref": {
+          "type": "string",
+          "pattern": "^(form:[a-z0-9._-]{1,64}|text\\[[0-9]{1,6}:[0-9]{1,6}\\](\\s.{0,80})?)$"
+        }
+      }
+    },
+    "license_xy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "center_x",
+        "center_y",
+        "source_ref"
+      ],
+      "properties": {
+        "mode": {
+          "const": "xy_range"
+        },
+        "center_x": {
+          "$ref": "#/$defs/length_range"
+        },
+        "center_y": {
+          "$ref": "#/$defs/length_range"
+        },
+        "source_ref": {
+          "type": "string",
+          "pattern": "^(form:[a-z0-9._-]{1,64}|text\\[[0-9]{1,6}:[0-9]{1,6}\\](\\s.{0,80})?)$"
+        }
+      }
+    },
+    "source_kind": {
+      "enum": [
+        "user_supplied",
+        "measured_device",
+        "vendor_datasheet",
+        "synthetic_teaching_fixture",
+        "design_assumption"
+      ]
+    },
+    "length_z_pair": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/length"
+        },
+        {
+          "$ref": "#/$defs/length"
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "fixed_cylinder": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "axis_xy",
+        "radius",
+        "z_range"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,63}$"
+        },
+        "axis_xy": {
+          "$ref": "#/$defs/xy_pair"
+        },
+        "radius": {
+          "$ref": "#/$defs/length"
+        },
+        "z_range": {
+          "$ref": "#/$defs/length_z_pair"
+        }
+      }
+    },
+    "screw_head": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_hole_index",
+        "radius",
+        "z_range"
+      ],
+      "properties": {
+        "base_hole_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 31
+        },
+        "radius": {
+          "$ref": "#/$defs/length"
+        },
+        "z_range": {
+          "$ref": "#/$defs/length_z_pair"
+        }
+      }
+    },
+    "connector_access": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "local_xy_range",
+            "absolute_z_range"
+          ],
+          "properties": {
+            "local_xy_range": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "$ref": "#/$defs/length_range"
+                },
+                {
+                  "$ref": "#/$defs/length_range"
+                }
+              ],
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "absolute_z_range": {
+              "$ref": "#/$defs/length_z_pair"
+            }
+          }
+        },
+        {
+          "const": "not_covered"
+        }
+      ],
+      "description": "\"not_covered\" is an explicit statement that the connector space is NOT covered; it is recorded, never fabricated, and never presented as a verified space."
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/source_kind"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "fixed_cylinders": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/fixed_cylinder"
+          }
+        },
+        "screw_heads": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/screw_head"
+          }
+        },
+        "connector_access": {
+          "$ref": "#/$defs/connector_access"
+        },
+        "support_contacts": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "a",
+              "b"
+            ],
+            "properties": {
+              "a": {
+                "enum": [
+                  "sensor_body",
+                  "plate_top"
+                ]
+              },
+              "b": {
+                "enum": [
+                  "sensor_body",
+                  "plate_top"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "description": "The environment is a finite, explicit user/design input: cylinder obstacles, screw-head envelopes (bound to base-hole indices), one connector-access box or an explicit not_covered, and the allowed support contacts. Every list must be PRESENT (an explicit [] means 'none'); an absent key is NEEDS_INPUT - never silently an empty environment, and the device card never supplies it. All z values are absolute and are used verbatim (never shifted when the plate thickness changes)."
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "minimum_free_clearance",
+        "minimum_edge_ligament",
+        "minimum_hole_ligament",
+        "dimensional_tolerance"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/source_kind"
+        },
+        "minimum_free_clearance": {
+          "$ref": "#/$defs/length"
+        },
+        "minimum_edge_ligament": {
+          "$ref": "#/$defs/length"
+        },
+        "minimum_hole_ligament": {
+          "$ref": "#/$defs/length"
+        },
+        "dimensional_tolerance": {
+          "$ref": "#/$defs/length"
+        }
+      }
+    }
+  }
+}

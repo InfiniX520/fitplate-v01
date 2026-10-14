@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fitplate.invalid/schemas/design.schema.json",
+  "title": "FitPlate DesignSpec",
+  "description": "A design candidate submitted against a frozen TaskSpec. A DesignSpec may only choose within the freedoms the task grants: plate dimensions the task marks editable, the device center inside the allowed ranges, and rotation 0. It cannot carry hole positions, environment objects, scripts, expressions or file paths -- 'additionalProperties: false' makes every such field an unknown-field rejection instead of a silently ignored suggestion. Locked-value changes, a stale task_revision and out-of-range values are refused by geometry/fitplate/schema.py (LOCKED_CONSTRAINT_CHANGED / STALE_INPUT / INVALID_SPEC).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "task_revision", "sensor_pose"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "task_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,62}$"
+    },
+    "task_revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+    },
+    "plate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": { "$ref": "#/$defs/plate_dim" },
+        "height": { "$ref": "#/$defs/plate_dim" },
+        "thickness": { "$ref": "#/$defs/plate_dim" }
+      },
+      "description": "Only the dimensions the task marks editable may be chosen; a locked dimension may be restated only with the frozen value. Every editable dimension must be present (no silent default)."
+    },
+    "sensor_pose": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["center", "rotation_deg"],
+      "properties": {
+        "center": { "$ref": "#/$defs/xy_pair" },
+        "rotation_deg": { "type": "number", "minimum": -360, "maximum": 360 }
+      },
+      "description": "Device center in world X/Y on the plate plane; the device seats on the plate top face. Rotation must be a value the task allows (version 1.0: 0 only)."
+    },
+    "note": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "description": "Free-text rationale for this candidate. Never used as acceptance evidence."
+    }
+  },
+  "$defs": {
+    "plate_dim": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 2000
+    },
+    "mm_number": {
+      "type": "number",
+      "minimum": -10000,
+      "maximum": 10000
+    },
+    "xy_pair": {
+      "type": "array",
+      "prefixItems": [
+        { "$ref": "#/$defs/mm_number" },
+        { "$ref": "#/$defs/mm_number" }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    }
+  }
+}

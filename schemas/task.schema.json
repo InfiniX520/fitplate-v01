@@ -1,0 +1,318 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fitplate.invalid/schemas/task.schema.json",
+  "title": "FitPlate TaskSpec",
+  "description": "Frozen acceptance contract for a single sensor-mount-plate task. All lengths are mm in the 'plate_lower_left_bottom_xyz' frame: the plate lower-left-bottom corner is the world origin, X points right, Y points up inside the plate plane, Z points away from the plate base. The plate body occupies [0,width] x [0,height] x [0,thickness]. A TaskSpec is frozen together with the scene file it references: scene_ref names a plain file (no path) and scene_sha256 pins its canonical content hash, so replacing the scene file cannot silently bypass the freeze. Cross-field rules that JSON Schema cannot express (locked/editable partition, hole-count and coordinate limits, unit/frame pinning, provenance kind, nominal value inside its editable range) are enforced by geometry/fitplate/schema.py. This document is the structural half of the same contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "revision",
+    "units",
+    "frame",
+    "scene_ref",
+    "scene_sha256",
+    "request",
+    "plate",
+    "base_holes",
+    "sensor",
+    "requirements",
+    "tolerances",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "task_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,62}$",
+      "description": "Stable task identity. A new revision keeps the same task_id; a different task gets a new id."
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "description": "Contract revision. Any change to the frozen requirements creates a new revision and invalidates earlier PASS reports."
+    },
+    "units": { "const": "mm" },
+    "frame": { "const": "plate_lower_left_bottom_xyz" },
+    "scene_ref": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*(\\.[A-Za-z0-9_-]+)*\\.scene\\.json$",
+      "description": "Plain file name of the referenced scene, resolved next to this task file. No directory separators, no leading dot, no consecutive dots."
+    },
+    "scene_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 of the referenced scene's canonical JSON (see schema.content_sha256), pinned when the task is frozen."
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["language", "text"],
+      "properties": {
+        "language": { "enum": ["zh-CN", "en"] },
+        "text": { "type": "string", "minLength": 1, "maxLength": 2000 }
+      },
+      "description": "The user's design/change request. Free text states intent only; every hard number lives in the structured fields."
+    },
+    "plate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height", "thickness", "locked", "editable"],
+      "properties": {
+        "width": { "$ref": "#/$defs/plate_dim" },
+        "height": { "$ref": "#/$defs/plate_dim" },
+        "thickness": { "$ref": "#/$defs/plate_dim" },
+        "locked": {
+          "type": "array",
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "enum": ["width", "height", "thickness"] },
+          "description": "Dimensions a DesignSpec must not change."
+        },
+        "editable": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "width": { "$ref": "#/$defs/dim_range" },
+            "height": { "$ref": "#/$defs/dim_range" },
+            "thickness": { "$ref": "#/$defs/dim_range" }
+          },
+          "description": "Dimensions this task explicitly allows the designer to choose, with their allowed range. The three dimensions are partitioned into locked and editable: a dimension in neither list is a contract error."
+        }
+      }
+    },
+    "base_holes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["diameter", "centers", "locked"],
+      "properties": {
+        "diameter": { "$ref": "#/$defs/hole_diameter" },
+        "centers": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/xy_pair" }
+        },
+        "locked": {
+          "const": true,
+          "description": "Base holes are frozen for every task: no DesignSpec may move, add or remove them."
+        }
+      }
+    },
+    "sensor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_id",
+        "body_size",
+        "hole_offsets",
+        "hole_diameter",
+        "allowed_center_x",
+        "allowed_center_y",
+        "allowed_rotation_deg"
+      ],
+      "properties": {
+        "model_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "body_size": {
+          "type": "array",
+          "prefixItems": [
+            { "$ref": "#/$defs/body_dim" },
+            { "$ref": "#/$defs/body_dim" },
+            { "$ref": "#/$defs/body_dim" }
+          ],
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "Simplified bounding envelope of the device, [size_x, size_y, size_z]. It is a teaching envelope, not a certified part drawing."
+        },
+        "hole_offsets": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/xy_pair" },
+          "description": "Mounting-hole centers relative to the device center, frozen for this task."
+        },
+        "hole_diameter": { "$ref": "#/$defs/hole_diameter" },
+        "allowed_center_x": { "$ref": "#/$defs/coord_range" },
+        "allowed_center_y": { "$ref": "#/$defs/coord_range" },
+        "allowed_rotation_deg": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": { "const": 0 },
+          "description": "Version 1.0 supports rotation 0 only; a task that allows any other angle is out of scope and must be refused rather than approximated."
+        }
+      }
+    },
+    "prior_device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_id", "body_size", "installed_center_xy", "connector_access"],
+      "description": "Previously installed device (optional). Present when the task is a device swap, so old and new specifications stay explicit.",
+      "properties": {
+        "model_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "body_size": {
+          "type": "array",
+          "prefixItems": [
+            { "$ref": "#/$defs/body_dim" },
+            { "$ref": "#/$defs/body_dim" },
+            { "$ref": "#/$defs/body_dim" }
+          ],
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "installed_center_xy": { "$ref": "#/$defs/xy_pair" },
+        "connector_access": { "$ref": "#/$defs/connector_access" }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimum_free_clearance",
+        "minimum_edge_ligament",
+        "minimum_hole_ligament"
+      ],
+      "properties": {
+        "minimum_free_clearance": { "$ref": "#/$defs/requirement_value" },
+        "minimum_edge_ligament": { "$ref": "#/$defs/requirement_value" },
+        "minimum_hole_ligament": { "$ref": "#/$defs/requirement_value" }
+      },
+      "description": "Engineering requirements in mm. These are design requirements, independent of the numeric geometry epsilon in 'tolerances'."
+    },
+    "tolerances": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "geometry_epsilon_mm",
+        "interference_volume_epsilon_mm3",
+        "dimensional_tolerance_mm"
+      ],
+      "properties": {
+        "geometry_epsilon_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 0.1
+        },
+        "interference_volume_epsilon_mm3": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "dimensional_tolerance_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        }
+      },
+      "description": "Numeric acceptance tolerances. geometry_epsilon_mm is the comparator noise floor, interference_volume_epsilon_mm3 is the smallest intersection volume counted as interference, dimensional_tolerance_mm is the accepted deviation of measured nominal dimensions. Near-threshold results must be reported as BORDERLINE instead of widening these values."
+    },
+    "provenance": { "$ref": "#/$defs/provenance" }
+  },
+  "$defs": {
+    "plate_dim": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 2000
+    },
+    "body_dim": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 2000
+    },
+    "hole_diameter": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 200
+    },
+    "requirement_value": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "mm_number": {
+      "type": "number",
+      "minimum": -10000,
+      "maximum": 10000
+    },
+    "xy_pair": {
+      "type": "array",
+      "prefixItems": [
+        { "$ref": "#/$defs/mm_number" },
+        { "$ref": "#/$defs/mm_number" }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "z_range": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number", "minimum": 0, "maximum": 10000 },
+        { "type": "number", "minimum": 0, "maximum": 10000 }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "dim_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "$ref": "#/$defs/plate_dim" },
+        "max": { "$ref": "#/$defs/plate_dim" }
+      }
+    },
+    "coord_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "$ref": "#/$defs/mm_number" },
+        "max": { "$ref": "#/$defs/mm_number" }
+      }
+    },
+    "connector_access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["local_xy_range", "absolute_z_range"],
+      "description": "Conservative envelope a connector/cable needs. X/Y are relative to the device center (so the envelope moves with the device), Z is absolute world height. The envelope states its own frame; it is not a simulated insertion motion.",
+      "properties": {
+        "local_xy_range": {
+          "type": "array",
+          "prefixItems": [
+            { "$ref": "#/$defs/coord_range" },
+            { "$ref": "#/$defs/coord_range" }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "absolute_z_range": { "$ref": "#/$defs/z_range" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "source", "review_status"],
+      "properties": {
+        "kind": {
+          "enum": ["synthetic_teaching_fixture", "user_supplied", "measured_device", "vendor_datasheet"],
+          "description": "Where the numbers come from. Every dev teaching fixture must declare synthetic_teaching_fixture; teaching data must never be reported as real device data."
+        },
+        "source": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "review_status": {
+          "enum": ["not_reviewed", "awaiting_geometry_verification", "verified"]
+        }
+      }
+    }
+  }
+}

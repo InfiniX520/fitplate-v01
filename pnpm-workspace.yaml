@@ -1,0 +1,14 @@
+# pnpm settings for this repository.
+#
+# pnpm >= 10 reads install policy from this file, not from package.json.
+# Only esbuild's postinstall is approved: it verifies the platform binary the
+# lockfile pins, which the front-end build (scripts/build-client.mjs) needs.
+# playwright's browser download is deliberately NOT approved here: browsers are
+# installed into the project-local .cache/playwright through the explicit
+# `test:browser:install` script so no per-user/system browser cache is touched.
+# This file intentionally declares no workspace packages: the front end is built
+# from the repository root and the plugin package arrives separately.
+packages: []
+
+allowBuilds:
+  esbuild: true

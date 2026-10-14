@@ -1,0 +1,39 @@
+{
+  "name": "fitplate",
+  "version": "0.1.0-dev.0",
+  "private": true,
+  "license": "MIT",
+  "description": "FitPlate - sensor mount plate design, independent geometry acceptance (G01-G08) and evidence-bound export, wired into Agnes Harness as native tools, read-only query services and a workbench panel.",
+  "engines": {
+    "node": ">=24.10"
+  },
+  "scripts": {
+    "test:contracts": ".venv/bin/python -m pytest tests/contracts -q",
+    "test:geometry": "flock /tmp/fitplate-task01-cad-test.lock .venv/bin/python -m pytest tests/geometry -q",
+    "test:preflight": "flock /tmp/fitplate-task01-cad-test.lock .venv/bin/python -m pytest tests/preflight -q",
+    "test:plugin": "flock /tmp/fitplate-task01-cad-test.lock node --test --test-concurrency=1 tests/plugin/*.test.mjs",
+    "test:workflow": "node --test tests/workflow/*.test.mjs",
+    "test:native": "node tests/native/run-native.mjs",
+    "build:client": "node scripts/build-client.mjs",
+    "test:adapter": "node --test tests/browser/adapter.test.mjs tests/browser/scene-model.test.mjs",
+    "test:browser:install": "PLAYWRIGHT_BROWSERS_PATH=.cache/playwright playwright install chromium",
+    "test:browser:deps": "node tests/browser/fetch-chromium-libs.mjs",
+    "test:browser": "node scripts/build-client.mjs && node --test tests/browser/adapter.test.mjs tests/browser/scene-model.test.mjs && node tests/browser/run-fixture.mjs",
+    "fixture:cad": "node tests/browser/generate-cad-fixture.mjs",
+    "prepare:workspace": "node scripts/prepare-workspace.mjs",
+    "verify:bundle": "env PYTHONPATH=geometry .venv/bin/python scripts/verify-bundle.py",
+    "verify:cad": "env PYTHONPATH=geometry .venv/bin/python scripts/verify-cad.py",
+    "agh:start": "/home/Heliora/ANG/agnes-harness/node_modules/.bin/tsx scripts/agh/start.mjs",
+    "agh:package": "/home/Heliora/ANG/agnes-harness/node_modules/.bin/tsx scripts/agh/package-fitplate.mjs",
+    "agh:web": "/home/Heliora/ANG/agnes-harness/node_modules/.bin/tsx scripts/agh/web.mjs"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@types/three": "0.186.0",
+    "esbuild": "0.28.2",
+    "playwright": "1.63.0",
+    "three": "0.186.1",
+    "typescript": "5.9.3"
+  }
+}
