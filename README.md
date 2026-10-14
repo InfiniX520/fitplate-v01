@@ -25,12 +25,12 @@ FitPlate 是一个基于 Agnes Harness（AGH）的设备安装转接板设计工
 
 [技术说明](docs/技术说明.md) · [测试报告](docs/测试报告.md) · [视频说明](docs/演示视频.md)
 
-演示原视频为 [FitPlate-demo-v3.mp4](docs/video/FitPlate-demo-v3.mp4)。本地可打开 `docs/index.html` 播放；该目录也可作为 GitHub Pages 的发布源。
+演示原视频为 [FitPlate-demo-v3.mp4](docs/video/FitPlate-demo-v3.mp4)。[在线演示](https://infinix520.github.io/fitplate-v01/) 已发布，可直接播放完整视频。
 
 开发使用 Claude Code 调用 GLM5.3，以及 Codex 中的 Astra、6.1Sol 辅助编码、审查与修复；产品运行使用官方 DeepSeek deepseek-flash（DS-v4.1）。中文视频旁白为合成语音。
 
 曾仁荣，江苏师范大学。2026 江苏省高校 AI+科学与工程创新实践黑客松，本科生组 U186，队名“依弦化羽”，单人参赛。
 
-项目记录日期：2026年10月15日。实际提交时间见仓库提交记录。
+公开发布日期：2026年10月15日（北京时间）。实际提交时间见仓库提交记录。
 
 代码许可见 [LICENSE](LICENSE)，第三方组件和设备资料来源见 [THIRD_PARTY.md](THIRD_PARTY.md)。
